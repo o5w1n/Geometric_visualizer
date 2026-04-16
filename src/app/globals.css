@@ -1,26 +1,73 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: var(--font-jetbrains-mono);
+  --font-sans: var(--font-space-grotesk);
+
+  /* Semantic theme tokens — used as bg-base, text-ink, border-rim, etc. */
+  --color-base:      var(--base);
+  --color-panel:     var(--panel);
+  --color-raised:    var(--raised);
+  --color-rim:       var(--rim);
+  --color-rim-faint: var(--rim-faint);
+  --color-ink:       var(--ink);
+  --color-ink-2:     var(--ink-2);
+  --color-ink-3:     var(--ink-3);
+  --color-ink-4:     var(--ink-4);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ── Light mode (default) ─────────────────────────────────── */
+:root {
+  --background: #f9f9fb;
+  --foreground: #18181b;
+
+  --base:      #f9f9fb;
+  --panel:     #ffffff;
+  --raised:    #f4f4f5;
+  --rim:       #e4e4e7;
+  --rim-faint: #f1f1f3;
+  --ink:       #18181b;
+  --ink-2:     #52525b;
+  --ink-3:     #a1a1aa;
+  --ink-4:     #d4d4d8;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ── Dark mode ────────────────────────────────────────────── */
+.dark {
+  --background: #09090b;
+  --foreground: #f4f4f5;
+
+  --base:      #09090b;
+  --panel:     #0c0c0e;
+  --raised:    #18181b;
+  --rim:       #27272a;
+  --rim-faint: #18181b;
+  --ink:       #f4f4f5;
+  --ink-2:     #71717a;
+  --ink-3:     #52525b;
+  --ink-4:     #3f3f46;
+}
+
+/* ── Lab canvas grid — adapts to theme ───────────────────── */
+.bg-grid-pattern {
+  background-size: 32px 32px;
+  background-image:
+    linear-gradient(to right, rgba(0, 0, 0, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.07) 1px, transparent 1px);
+}
+.dark .bg-grid-pattern {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+}
+
+/* ── Hub dot grid ────────────────────────────────────────── */
+.bg-dot-grid {
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.07) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.dark .bg-dot-grid {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
 }
