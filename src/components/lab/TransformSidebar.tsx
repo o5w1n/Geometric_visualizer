@@ -6,8 +6,8 @@ import { TranslationPanel } from "./TranslationPanel";
 import { ReflectionPanel } from "./ReflectionPanel";
 import { RotationPanel } from "./RotationPanel";
 import { DilationPanel } from "./DilationPanel";
-import { reflectPoint, rotatePoint, dilatePoint, translatePoint } from "@/lib/transformationUtils";
-import { ArrowRight, Move, FlipHorizontal, RotateCw, Maximize, ArrowLeft, RotateCcw } from "lucide-react";
+import { reflectPoint, rotatePoint, dilatePoint, translatePoint, type Point } from "@/lib/transformationUtils";
+import { ArrowRight, Move, FlipHorizontal, RotateCw, Maximize, ArrowLeft, RotateCcw, Plus, Trash2 } from "lucide-react";
 
 export function TransformSidebar() {
   const { mode, setMode, resetShape } = useGeometryStore();
@@ -56,6 +56,8 @@ export function TransformSidebar() {
           </div>
         </div>
 
+        <VerticesPanel />
+
         <div className="mt-auto pt-6 border-t border-rim">
           <button
             onClick={resetShape}
@@ -91,7 +93,7 @@ export function TransformSidebar() {
 
 function VerticesPanel() {
   const store = useGeometryStore();
-  const { vertices, mode } = store;
+  const { vertices, mode, setVertices, updateVertex } = store;
 
   const transformed = useMemo(() => {
     if (mode === 'translate') return vertices.map(v => translatePoint(v, store.translationVector));
@@ -101,15 +103,62 @@ function VerticesPanel() {
     return vertices;
   }, [store, vertices, mode]);
 
+  function handleCoord(i: number, axis: 0 | 1, raw: string) {
+    const n = parseFloat(raw);
+    if (isNaN(n)) return;
+    const next: Point = [...vertices[i]] as Point;
+    next[axis] = n;
+    updateVertex(i, next);
+  }
+
+  function addVertex() {
+    setVertices([...vertices, [0, 0]]);
+  }
+
+  function removeVertex(i: number) {
+    if (vertices.length <= 3) return;
+    setVertices(vertices.filter((_, idx) => idx !== i));
+  }
+
   return (
     <div className="mt-6 pt-6 border-t border-rim space-y-4">
       <div>
-        <h3 className="text-xs font-medium text-ink-2 mb-2 uppercase tracking-wider">Original</h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-xs font-medium text-ink-2 uppercase tracking-wider">Vertices</h3>
+          <button
+            onClick={addVertex}
+            className="flex items-center gap-1 text-[10px] text-ink-3 hover:text-ink transition-colors cursor-pointer"
+          >
+            <Plus size={10} /> Add
+          </button>
+        </div>
         <div className="space-y-1">
           {vertices.map((v, i) => (
-            <div key={i} className="flex justify-between items-center bg-raised border border-rim rounded-md px-2 py-1.5">
-              <span className="text-ink-3 font-mono text-xs">v{i + 1}</span>
-              <span className="text-ink font-mono text-xs">({v[0].toFixed(2)}, {v[1].toFixed(2)})</span>
+            <div key={i} className="flex items-center gap-1.5">
+              <span className="text-ink-3 font-mono text-[10px] w-5 shrink-0">v{i + 1}</span>
+              <input
+                type="number"
+                step="0.5"
+                defaultValue={v[0]}
+                key={`${i}-x-${v[0]}`}
+                onChange={e => handleCoord(i, 0, e.target.value)}
+                className="w-full bg-raised border border-rim rounded px-1.5 py-1 text-xs font-mono text-ink focus:outline-none focus:border-blue-500/50"
+              />
+              <input
+                type="number"
+                step="0.5"
+                defaultValue={v[1]}
+                key={`${i}-y-${v[1]}`}
+                onChange={e => handleCoord(i, 1, e.target.value)}
+                className="w-full bg-raised border border-rim rounded px-1.5 py-1 text-xs font-mono text-ink focus:outline-none focus:border-blue-500/50"
+              />
+              <button
+                onClick={() => removeVertex(i)}
+                disabled={vertices.length <= 3}
+                className="shrink-0 text-ink-3 hover:text-rose-400 disabled:opacity-20 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              >
+                <Trash2 size={12} />
+              </button>
             </div>
           ))}
         </div>
@@ -129,7 +178,7 @@ function VerticesPanel() {
         </div>
       )}
 
-      <p className="text-[10px] text-ink-3">Drag vertices on the chart to reposition.</p>
+      <p className="text-[10px] text-ink-3">Edit inputs or drag vertices on the chart.</p>
     </div>
   );
 }

@@ -221,7 +221,7 @@ const RECT_PRISM: ShapeNetDef = {
 //       [Lateral rect π × 1.4]
 //       [Bottom circle]
 // Circumference = 2πr = π ≈ 3.14
-const CYL_H = 1.4, CYL_R = 0.5;
+export const CYL_H = 1.4, CYL_R = 0.5;
 const CYL_CIRC = Math.PI * 2 * CYL_R;  // ≈ 3.14
 const CYLINDER: ShapeNetDef = {
   id: 'cylinder', label: 'Cylinder', emoji: '⬤', primaryColor: '#10b981',
@@ -266,9 +266,9 @@ const CYLINDER: ShapeNetDef = {
 // ── 4. Cone  (r = 0.5, h = 1.2) ──────────────────────────────────────────────
 // slant l = √(r² + h²) ≈ 1.3
 // Net: sector (r = l, angle = 2πr/l) + base circle touching arc
-const CONE_R = 0.5, CONE_H = 1.2;
-const CONE_L = Math.sqrt(CONE_R * CONE_R + CONE_H * CONE_H);       // ≈ 1.3
-const CONE_ANGLE = (2 * Math.PI * CONE_R) / CONE_L;                // ≈ 2.42 rad
+export const CONE_R = 0.5, CONE_H = 1.2;
+export const CONE_L = Math.sqrt(CONE_R * CONE_R + CONE_H * CONE_H);       // ≈ 1.3
+export const CONE_ANGLE = (2 * Math.PI * CONE_R) / CONE_L;                // ≈ 2.42 rad
 const CONE: ShapeNetDef = {
   id: 'cone', label: 'Cone', emoji: '▲', primaryColor: '#f59e0b',
   saFormula: 'SA = \\pi r(r + l)',
