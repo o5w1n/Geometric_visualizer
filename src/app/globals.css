@@ -71,3 +71,51 @@
 .dark .bg-dot-grid {
   background-image: radial-gradient(circle, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
 }
+
+.viz-card {
+  background: #191a1d;
+  border: 1px solid #2b2d31;
+  border-radius: 16px;
+}
+
+.viz-pill {
+  border-radius: 9999px;
+  border: 1px solid #3a3c43;
+  background: #212327;
+  color: #c8cbd4;
+  transition: all 150ms ease;
+}
+
+.viz-pill:hover {
+  background: #2a2d34;
+  color: #f3f4f6;
+}
+
+.viz-pill-active {
+  background: #f4f4f5;
+  color: #141518;
+  border-color: #f4f4f5;
+}
+
+.viz-title {
+  font-size: 0.88rem;
+  letter-spacing: 0.06em;
+  color: #efeff1;
+  font-weight: 700;
+}
+
+.viz-muted {
+  color: #a1a1aa;
+  font-size: 0.78rem;
+}
+
+.viz-formula {
+  color: #d6d7dd;
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.viz-range {
+  width: 100%;
+  accent-color: #6366f1;
+}

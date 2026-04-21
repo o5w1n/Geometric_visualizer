@@ -35,12 +35,12 @@ export default function AlgorithmLabPage() {
       </header>
 
       {/* ── Content grid ───────────────────────────────────────── */}
-      <main className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_350px] overflow-hidden">
-        <section className="bg-grid-pattern relative border-r border-rim-faint flex items-center justify-center p-4 overflow-hidden">
+      <main className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_350px] overflow-hidden p-4 gap-4 bg-[#101113]">
+        <section className="viz-card relative flex items-center justify-center p-4 overflow-hidden">
           <AlgorithmCanvas />
         </section>
 
-        <aside className="bg-panel border-t lg:border-t-0 border-rim-faint flex flex-col gap-6 overflow-y-auto p-6">
+        <aside className="viz-card flex flex-col gap-6 overflow-y-auto p-6">
           <AlgorithmSidebar />
         </aside>
       </main>

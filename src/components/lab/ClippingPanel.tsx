@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useGeometryStore } from "@/store/useGeometryStore";
-import { csRegionCode, csRegionLabel, reflectPoint, rotatePoint, dilatePoint, translatePoint, Point } from "@/lib/transformationUtils";
+import { csRegionCode, csRegionLabel, reflectPoint, rotatePoint, translatePoint, Point } from "@/lib/transformationUtils";
 
 export function ClippingPanel() {
   const store = useGeometryStore();
@@ -11,16 +11,26 @@ export function ClippingPanel() {
     viewport, setViewport,
     vertices, mode,
     translationVector, reflectionLine, rotationPivot, rotationAngle,
-    dilationCenter, dilationScale,
+    dilationCenter, dilationScale, dilationScaleY, combinedAngle, combinedScale, combinedTranslate,
   } = store;
 
   const activeVertices = useMemo((): Point[] => {
     if (mode === 'translate') return vertices.map(v => translatePoint(v, translationVector));
     if (mode === 'reflect')   return vertices.map(v => reflectPoint(v, reflectionLine.p1, reflectionLine.p2));
     if (mode === 'rotate')    return vertices.map(v => rotatePoint(v, rotationPivot, rotationAngle));
-    if (mode === 'dilate')    return vertices.map(v => dilatePoint(v, dilationCenter, dilationScale));
+    if (mode === 'scale')     return vertices.map(v => [dilationCenter[0] + (v[0] - dilationCenter[0]) * dilationScale, dilationCenter[1] + (v[1] - dilationCenter[1]) * dilationScaleY] as Point);
+    if (mode === 'combined') {
+      const angleRad = (combinedAngle * Math.PI) / 180;
+      const sin = Math.sin(angleRad);
+      const cos = Math.cos(angleRad);
+      return vertices.map(([x, y]) => {
+        const rx = x * cos - y * sin;
+        const ry = x * sin + y * cos;
+        return [rx * combinedScale[0] + combinedTranslate[0], ry * combinedScale[1] + combinedTranslate[1]] as Point;
+      });
+    }
     return vertices;
-  }, [vertices, mode, translationVector, reflectionLine, rotationPivot, rotationAngle, dilationCenter, dilationScale]);
+  }, [vertices, mode, translationVector, reflectionLine, rotationPivot, rotationAngle, dilationCenter, dilationScale, dilationScaleY, combinedAngle, combinedScale, combinedTranslate]);
 
   const { xMin, xMax, yMin, yMax } = viewport;
 
@@ -37,7 +47,7 @@ export function ClippingPanel() {
     code === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400";
 
   return (
-    <div className="border-t border-rim pt-6 mt-2">
+    <div className="viz-card p-4">
       {/* Toggle */}
       <div className="flex items-center justify-between mb-4">
         <div>
