@@ -4,7 +4,6 @@ import { TransformChart } from "@/components/lab/TransformChart";
 import { TransformSidebar } from "@/components/lab/TransformSidebar";
 import { ClippingPanel } from "@/components/lab/ClippingPanel";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
-import { LabModeTabs } from "@/components/shared/LabModeTabs";
 
 export default function TransformationLabPage() {
   return (
@@ -37,15 +36,12 @@ export default function TransformationLabPage() {
       </header>
 
       {/* ── Content grid ───────────────────────────────────────── */}
-      <main className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 overflow-hidden p-4 bg-[#101113]">
-        <section className="bg-[#191a1d] rounded-2xl border border-rim p-4 flex flex-col min-h-0">
-          <LabModeTabs />
-          <div className="pt-3 flex-1 min-h-0">
-            <TransformChart />
-          </div>
+      <main className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_350px] overflow-hidden">
+        <section className="bg-grid-pattern relative border-r border-rim-faint p-8 flex items-center justify-center">
+          <TransformChart />
         </section>
 
-        <aside className="min-h-0 overflow-y-auto pr-1 space-y-4">
+        <aside className="bg-panel border-t lg:border-t-0 border-rim-faint flex flex-col gap-8 overflow-y-auto p-6">
           <TransformSidebar />
           <ClippingPanel />
         </aside>

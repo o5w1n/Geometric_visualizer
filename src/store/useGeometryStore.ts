@@ -3,9 +3,8 @@ import { Point, reflectPoint, rotatePoint, dilatePoint, translatePoint } from '@
 import { ShapeType } from '@/lib/shapeDefinitions';
 import { type UnfoldShapeId } from '@/lib/shapeNets';
 
-export type TransformationMode = 'translate' | 'reflect' | 'rotate' | 'scale' | 'combined' | 'threeD' | null;
+export type TransformationMode = 'translate' | 'reflect' | 'rotate' | 'dilate' | null;
 export type ReflectionMode = 'x-axis' | 'y-axis' | 'y=x' | 'y=-x' | 'custom';
-export type CombinedOrder = 'trs' | 'rst';
 
 export interface SpawnedShape {
   id: string;
@@ -34,18 +33,6 @@ interface GeometryState {
   // Dilation
   dilationCenter: Point;
   dilationScale: number;
-  dilationScaleY: number;
-
-  // Combined (2D)
-  combinedAngle: number;
-  combinedScale: Point;
-  combinedTranslate: Point;
-  combinedOrder: CombinedOrder;
-
-  // 3D transformations
-  rotation3D: [number, number, number];
-  scale3D: [number, number, number];
-  translation3D: [number, number, number];
 
   // Clipping Viewport
   viewportEnabled: boolean;
@@ -80,16 +67,6 @@ interface GeometryState {
 
   setDilationCenter: (pos: Point) => void;
   setDilationScale: (scale: number) => void;
-  setDilationScaleY: (scale: number) => void;
-
-  setCombinedAngle: (angle: number) => void;
-  setCombinedScale: (scale: Point) => void;
-  setCombinedTranslate: (translate: Point) => void;
-  setCombinedOrder: (order: CombinedOrder) => void;
-
-  setRotation3D: (rotation: [number, number, number]) => void;
-  setScale3D: (scale: [number, number, number]) => void;
-  setTranslation3D: (translation: [number, number, number]) => void;
 
   applyTransformation: () => void;
   resetShape: () => void;
@@ -110,7 +87,7 @@ const DEFAULT_VERTICES: Point[] = [[0, 0], [4, 0], [2, 3]];
 export const useGeometryStore = create<GeometryState>((set) => ({
   vertices: DEFAULT_VERTICES,
 
-  mode: 'translate',
+  mode: null,
 
   translationVector: [0, 0],
 
@@ -122,16 +99,6 @@ export const useGeometryStore = create<GeometryState>((set) => ({
 
   dilationCenter: [0, 0],
   dilationScale: 2,
-  dilationScaleY: 2,
-
-  combinedAngle: -110,
-  combinedScale: [2, 1.7],
-  combinedTranslate: [-2.5, 1],
-  combinedOrder: 'trs',
-
-  rotation3D: [106, -97, -76],
-  scale3D: [0.92, 1.66, 1.66],
-  translation3D: [43, 31, -12],
 
   viewportEnabled: false,
   viewport: { xMin: -5, yMin: -4, xMax: 5, yMax: 4 },
@@ -183,16 +150,6 @@ export const useGeometryStore = create<GeometryState>((set) => ({
 
   setDilationCenter: (pos) => set({ dilationCenter: pos }),
   setDilationScale: (scale) => set({ dilationScale: scale }),
-  setDilationScaleY: (scale) => set({ dilationScaleY: scale }),
-
-  setCombinedAngle: (angle) => set({ combinedAngle: angle }),
-  setCombinedScale: (scale) => set({ combinedScale: scale }),
-  setCombinedTranslate: (translate) => set({ combinedTranslate: translate }),
-  setCombinedOrder: (order) => set({ combinedOrder: order }),
-
-  setRotation3D: (rotation) => set({ rotation3D: rotation }),
-  setScale3D: (scale) => set({ scale3D: scale }),
-  setTranslation3D: (translation) => set({ translation3D: translation }),
 
   applyTransformation: () => set((state) => {
     let newVertices = state.vertices;
@@ -205,28 +162,9 @@ export const useGeometryStore = create<GeometryState>((set) => ({
     } else if (state.mode === 'rotate') {
       newVertices = state.vertices.map(v => rotatePoint(v, state.rotationPivot, state.rotationAngle));
       return { vertices: newVertices, rotationAngle: 0 };
-    } else if (state.mode === 'scale') {
+    } else if (state.mode === 'dilate') {
       newVertices = state.vertices.map(v => dilatePoint(v, state.dilationCenter, state.dilationScale));
-      return { vertices: newVertices, dilationScale: 1, dilationScaleY: 1 };
-    } else if (state.mode === 'combined') {
-      const angleRad = (state.combinedAngle * Math.PI) / 180;
-      const sin = Math.sin(angleRad);
-      const cos = Math.cos(angleRad);
-      const [sx, sy] = state.combinedScale;
-      const [dx, dy] = state.combinedTranslate;
-      newVertices = state.vertices.map(([x, y]) => {
-        if (state.combinedOrder === 'trs') {
-          const rx = x * cos - y * sin;
-          const ry = x * sin + y * cos;
-          return [rx * sx + dx, ry * sy + dy] as Point;
-        }
-        const sxv = x * sx;
-        const syv = y * sy;
-        const rx = sxv * cos - syv * sin;
-        const ry = sxv * sin + syv * cos;
-        return [rx + dx, ry + dy] as Point;
-      });
-      return { vertices: newVertices };
+      return { vertices: newVertices, dilationScale: 1 };
     }
     return { vertices: newVertices };
   }),
@@ -240,14 +178,6 @@ export const useGeometryStore = create<GeometryState>((set) => ({
     rotationAngle: 90,
     dilationCenter: [0, 0],
     dilationScale: 2,
-    dilationScaleY: 2,
-    combinedAngle: -110,
-    combinedScale: [2, 1.7],
-    combinedTranslate: [-2.5, 1],
-    combinedOrder: 'trs',
-    rotation3D: [106, -97, -76],
-    scale3D: [0.92, 1.66, 1.66],
-    translation3D: [43, 31, -12],
   }),
 
   setSelectedShape: (s) => set({ selectedShape: s }),

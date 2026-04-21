@@ -7,7 +7,7 @@ import {
   ResponsiveContainer, ReferenceLine 
 } from "recharts";
 import { useGeometryStore } from "@/store/useGeometryStore";
-import { reflectPoint, rotatePoint, translatePoint, cohenSutherlandClip, Point } from "@/lib/transformationUtils";
+import { reflectPoint, rotatePoint, dilatePoint, translatePoint, cohenSutherlandClip, Point } from "@/lib/transformationUtils";
 
 // Build polygon edge list from vertices
 function polyEdges(pts: Point[]): [Point, Point][] {
@@ -30,22 +30,7 @@ function hexToRgb(hex: string) {
 }
 
 // Custom SVG Overlay for shapes, clipping, and lines
-type ChartPoint = { x: number; y: number; type?: string; index?: number };
-
-type OverlayProps = {
-  xAxisMap?: { 0?: { scale: (n: number) => number } };
-  yAxisMap?: { 0?: { scale: (n: number) => number } };
-  ghostData: ChartPoint[];
-  activeData: ChartPoint[];
-  mode: string | null;
-  reflectionLine: { p1: Point; p2: Point };
-  viewportEnabled: boolean;
-  viewport: { xMin: number; yMin: number; xMax: number; yMax: number };
-  originalColor: string;
-  transformedColor: string;
-};
-
-const VisualsOverlay = (props: OverlayProps) => {
+const VisualsOverlay = (props: any) => {
   const { xAxisMap, yAxisMap, ghostData, activeData, mode, reflectionLine,
           viewportEnabled, viewport, originalColor, transformedColor } = props;
 
@@ -57,12 +42,12 @@ const VisualsOverlay = (props: OverlayProps) => {
   });
 
   // Convert shape data to SVG point strings
-  const ghostPts = ghostData.length >= 3 ? ghostData.map((d) => {
+  const ghostPts = ghostData.length >= 3 ? ghostData.map((d: any) => {
     const px = toPx(d.x, d.y);
     return `${px.x},${px.y}`;
   }).join(' ') : '';
 
-  const activePts = activeData.length >= 3 ? activeData.map((d) => {
+  const activePts = activeData.length >= 3 ? activeData.map((d: any) => {
     const px = toPx(d.x, d.y);
     return `${px.x},${px.y}`;
   }).join(' ') : '';
@@ -82,11 +67,11 @@ const VisualsOverlay = (props: OverlayProps) => {
   }
 
   // Cohen-Sutherland clipped edges
-  const clippedEdges: React.ReactElement[] = [];
-  const outsideEdges: React.ReactElement[] = [];
+  let clippedEdges: React.ReactElement[] = [];
+  let outsideEdges: React.ReactElement[] = [];
   if (viewportEnabled && viewport) {
     const { xMin, xMax, yMin, yMax } = viewport;
-    const shapeVerts: Point[] = activeData.map((d) => [d.x, d.y] as Point);
+    const shapeVerts: Point[] = activeData.map((d: any) => [d.x, d.y] as Point);
     const edges = polyEdges(shapeVerts);
 
     edges.forEach(([p1, p2], i) => {
@@ -150,29 +135,6 @@ const VisualsOverlay = (props: OverlayProps) => {
   );
 };
 
-function project3D(x: number, y: number, z: number, rot: [number, number, number], scale: [number, number, number], translate: [number, number, number]) {
-  let px = x * scale[0];
-  let py = y * scale[1];
-  let pz = z * scale[2];
-  const rx = (rot[0] * Math.PI) / 180;
-  const ry = (rot[1] * Math.PI) / 180;
-  const rz = (rot[2] * Math.PI) / 180;
-  const y1 = py * Math.cos(rx) - pz * Math.sin(rx);
-  const z1 = py * Math.sin(rx) + pz * Math.cos(rx);
-  py = y1; pz = z1;
-  const x2 = px * Math.cos(ry) + pz * Math.sin(ry);
-  const z2 = -px * Math.sin(ry) + pz * Math.cos(ry);
-  px = x2; pz = z2;
-  const x3 = px * Math.cos(rz) - py * Math.sin(rz);
-  const y3 = px * Math.sin(rz) + py * Math.cos(rz);
-  px = x3; py = y3;
-  px += translate[0] / 15;
-  py += translate[1] / 15;
-  pz += translate[2] / 15;
-  const depth = 1 / (1 + (pz + 3) * 0.12);
-  return { x: px * depth * 2, y: py * depth * 2 };
-}
-
 export function TransformChart() {
   const store = useGeometryStore();
   const { originalColor, transformedColor, setOriginalColor, setTransformedColor } = store;
@@ -192,18 +154,8 @@ export function TransformChart() {
     if (store.mode === 'rotate') {
       return store.vertices.map(v => rotatePoint(v, store.rotationPivot, store.rotationAngle));
     }
-    if (store.mode === 'scale') {
-      return store.vertices.map(v => [store.dilationCenter[0] + (v[0] - store.dilationCenter[0]) * store.dilationScale, store.dilationCenter[1] + (v[1] - store.dilationCenter[1]) * store.dilationScaleY] as Point);
-    }
-    if (store.mode === 'combined') {
-      const angleRad = (store.combinedAngle * Math.PI) / 180;
-      const sin = Math.sin(angleRad);
-      const cos = Math.cos(angleRad);
-      return store.vertices.map(([x, y]) => {
-        const rx = x * cos - y * sin;
-        const ry = x * sin + y * cos;
-        return [rx * store.combinedScale[0] + store.combinedTranslate[0], ry * store.combinedScale[1] + store.combinedTranslate[1]] as Point;
-      });
+    if (store.mode === 'dilate') {
+      return store.vertices.map(v => dilatePoint(v, store.dilationCenter, store.dilationScale));
     }
     return store.vertices; // fallback when mode is null
   }, [store]);
@@ -211,7 +163,7 @@ export function TransformChart() {
   // Play a tone whose pitch maps to the area of the transformed shape
   useShapeAudio(activeVertices, audioEnabled);
 
-  const handleMouseDown = (props: { payload?: { type?: string; index?: number } } | undefined) => {
+  const handleMouseDown = (props: any) => {
     if (!props || !props.payload) return;
     const { type, index } = props.payload;
     if (type) {
@@ -267,8 +219,8 @@ export function TransformChart() {
   };
   
   // Prepare data for recharts scatter layers
-  const ghostData = store.mode === "threeD" ? [] : store.vertices.map((v, i) => ({ x: v[0], y: v[1], type: 'vertex', index: i }));
-  const activeData = store.mode === "threeD" ? [] : activeVertices.map((v, i) => ({ x: v[0], y: v[1], type: 'active-vertex', index: i }));
+  const ghostData = store.vertices.map((v, i) => ({ x: v[0], y: v[1], type: 'vertex', index: i }));
+  const activeData = activeVertices.map((v, i) => ({ x: v[0], y: v[1], type: 'active-vertex', index: i }));
   
   const interactablePoints = [];
   if (store.mode === 'reflect') {
@@ -276,7 +228,7 @@ export function TransformChart() {
     interactablePoints.push({ x: store.reflectionLine.p2[0], y: store.reflectionLine.p2[1], type: 'reflect-p2' });
   } else if (store.mode === 'rotate') {
     interactablePoints.push({ x: store.rotationPivot[0], y: store.rotationPivot[1], type: 'pivot' });
-  } else if (store.mode === 'scale') {
+  } else if (store.mode === 'dilate') {
     interactablePoints.push({ x: store.dilationCenter[0], y: store.dilationCenter[1], type: 'center' });
   }
   if (store.viewportEnabled) {
@@ -307,21 +259,21 @@ export function TransformChart() {
       </button>
       <ResponsiveContainer width="100%" height="100%">
         <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-          <CartesianGrid stroke="#2f4470" strokeOpacity={0.5} strokeDasharray="1 0" />
+          <CartesianGrid stroke="#27272a" strokeDasharray="3 3" />
           
-          <XAxis type="number" dataKey="x" name="X axis" domain={[-10, 10]} tickCount={21} stroke="#4c659b" />
-          <YAxis type="number" dataKey="y" name="Y axis" domain={[-10, 10]} tickCount={21} stroke="#4c659b" />
+          <XAxis type="number" dataKey="x" name="X axis" domain={[-10, 10]} tickCount={21} stroke="#52525b" />
+          <YAxis type="number" dataKey="y" name="Y axis" domain={[-10, 10]} tickCount={21} stroke="#52525b" />
           
-          <ReferenceLine y={0} stroke="#2e5ca9" strokeWidth={1.3} />
-          <ReferenceLine x={0} stroke="#2e5ca9" strokeWidth={1.3} />
+          <ReferenceLine y={0} stroke="#71717a" strokeWidth={1} />
+          <ReferenceLine x={0} stroke="#71717a" strokeWidth={1} />
           
           {/* Active shape vertices (unclickable visually, just indicator) */}
-          {store.mode !== null && store.mode !== "threeD" && (
+          {store.mode !== null && (
             <Scatter name="ActiveShape" data={activeData} fill={transformedColor} shape="circle" isAnimationActive={false} pointerEvents="none" />
           )}
 
           {/* Ghost shape vertices (draggable) */}
-          {store.mode !== "threeD" && <Scatter
+          <Scatter
             name="GhostShape"
             data={ghostData}
             fill={originalColor}
@@ -329,10 +281,10 @@ export function TransformChart() {
             onMouseDown={handleMouseDown}
             isAnimationActive={false}
             className="cursor-pointer"
-          />}
+          />
 
           {/* Interactive controls (Pivots, reflection handles) */}
-          {store.mode !== "threeD" && <Scatter 
+          <Scatter 
             name="Controls" 
             data={interactablePoints} 
             fill="#f43f5e" 
@@ -340,10 +292,10 @@ export function TransformChart() {
             onMouseDown={handleMouseDown}
             isAnimationActive={false}
             className="cursor-pointer"
-          />}
+          />
           
           {/* Custom SVG Overlay */}
-          {store.mode !== "threeD" && <VisualsOverlay
+          <VisualsOverlay
             ghostData={ghostData}
             activeData={activeData}
             mode={store.mode}
@@ -354,30 +306,7 @@ export function TransformChart() {
             viewport={store.viewport}
             originalColor={originalColor}
             transformedColor={transformedColor}
-          />}
-          {store.mode === "threeD" && (
-            <Scatter
-              name="3DView"
-              data={(() => {
-                const verts = [
-                  [-2, -2, -2], [2, -2, -2], [2, 2, -2], [-2, 2, -2],
-                  [-2, -2, 2], [2, -2, 2], [2, 2, 2], [-2, 2, 2],
-                ] as [number, number, number][];
-                const edges = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
-                const lines: { x: number; y: number }[] = [];
-                edges.forEach(([a, b]) => {
-                  const p1 = project3D(...verts[a], store.rotation3D, store.scale3D, store.translation3D);
-                  const p2 = project3D(...verts[b], store.rotation3D, store.scale3D, store.translation3D);
-                  lines.push({ x: p1.x, y: p1.y }, { x: p2.x, y: p2.y });
-                });
-                return lines;
-              })()}
-              fill="#4d7ee5"
-              line
-              shape="circle"
-              isAnimationActive={false}
-            />
-          )}
+          />
         </ScatterChart>
       </ResponsiveContainer>
       </div>{/* end chart area */}
@@ -403,7 +332,7 @@ function ColorStrip({ originalColor, transformedColor, onOriginal, onTransformed
   const transRgb = hexToRgb(transformedColor);
 
   return (
-    <div className="flex gap-3 px-4 py-3 border-t border-rim bg-panel/60">
+    <div className="flex gap-3 px-4 py-3 border-t border-zinc-800 bg-zinc-950/60">
       {[
         { label: 'Original', color: originalColor, rgb: origRgb, onChange: onOriginal },
         { label: 'Transformed', color: transformedColor, rgb: transRgb, onChange: onTransformed },
