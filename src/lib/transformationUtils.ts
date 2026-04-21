@@ -1,5 +1,33 @@
 export type Point = [number, number];
 
+/** 2D combined mode: `trs` = rotate → scale → translate; `rst` = scale → rotate → translate */
+export type CombinedOrder = "trs" | "rst";
+
+export function applyCombined2D(
+  p: Point,
+  angleDeg: number,
+  scale: Point,
+  translate: Point,
+  order: CombinedOrder
+): Point {
+  const angleRad = (angleDeg * Math.PI) / 180;
+  const sin = Math.sin(angleRad);
+  const cos = Math.cos(angleRad);
+  const [sx, sy] = scale;
+  const [dx, dy] = translate;
+  const [x, y] = p;
+  if (order === "trs") {
+    const rx = x * cos - y * sin;
+    const ry = x * sin + y * cos;
+    return [rx * sx + dx, ry * sy + dy];
+  }
+  const sxv = x * sx;
+  const syv = y * sy;
+  const rx = sxv * cos - syv * sin;
+  const ry = sxv * sin + syv * cos;
+  return [rx + dx, ry + dy];
+}
+
 export function reflectPoint(p: Point, lineP1: Point, lineP2: Point): Point {
   const [x, y] = p;
   const [x1, y1] = lineP1;

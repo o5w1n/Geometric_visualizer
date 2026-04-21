@@ -50,6 +50,31 @@
   --ink-4:     #3f3f46;
 }
 
+/* ── Lab / visualizer chrome (used across module pages) ───── */
+:root {
+  --lab-canvas-bg: #101113;
+  --lab-header-bg: color-mix(in oklab, var(--base) 88%, transparent);
+  --lab-header-border: var(--rim-faint);
+  --lab-panel: color-mix(in oklab, #191a1d 92%, var(--panel));
+  --lab-panel-border: color-mix(in oklab, var(--rim) 70%, #2b2d31);
+  --lab-glass: color-mix(in oklab, #191a1d 75%, transparent);
+  --viz-accent: #6366f1;
+  --viz-matrix-bg: color-mix(in oklab, #0f1012 80%, var(--raised));
+}
+
+.dark {
+  --lab-canvas-bg: #101113;
+  --lab-header-bg: color-mix(in oklab, var(--base) 92%, transparent);
+  --lab-panel: #141518;
+  --lab-panel-border: #2b2d31;
+  --lab-glass: rgba(20, 21, 24, 0.72);
+  --viz-matrix-bg: rgba(12, 13, 16, 0.85);
+}
+
+.lab-app-root {
+  background-color: var(--lab-canvas-bg);
+}
+
 /* ── Lab canvas grid — adapts to theme ───────────────────── */
 .bg-grid-pattern {
   background-size: 32px 32px;
@@ -73,17 +98,20 @@
 }
 
 .viz-card {
-  background: #191a1d;
-  border: 1px solid #2b2d31;
+  background: var(--lab-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--lab-panel-border);
   border-radius: 16px;
+  box-shadow: 0 1px 0 color-mix(in oklab, white 6%, transparent) inset;
 }
 
 .viz-pill {
   border-radius: 9999px;
-  border: 1px solid #3a3c43;
-  background: #212327;
+  border: 1px solid color-mix(in oklab, var(--lab-panel-border) 90%, var(--ink-3));
+  background: color-mix(in oklab, var(--lab-panel) 85%, #1a1b1f);
   color: #c8cbd4;
-  transition: all 150ms ease;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
 }
 
 .viz-pill:hover {
@@ -95,6 +123,26 @@
   background: #f4f4f5;
   color: #141518;
   border-color: #f4f4f5;
+}
+
+.viz-pill-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.viz-pill-row::-webkit-scrollbar {
+  height: 4px;
+}
+
+.viz-pill-row::-webkit-scrollbar-thumb {
+  background: var(--rim);
+  border-radius: 999px;
 }
 
 .viz-title {
@@ -117,5 +165,40 @@
 
 .viz-range {
   width: 100%;
-  accent-color: #6366f1;
+  accent-color: var(--viz-accent);
+  height: 6px;
+  border-radius: 999px;
+}
+
+.viz-input {
+  width: 100%;
+  background: var(--viz-matrix-bg);
+  border: 1px solid var(--lab-panel-border);
+  border-radius: 8px;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.75rem;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  color: var(--ink);
+}
+
+.viz-input:focus {
+  outline: none;
+  border-color: color-mix(in oklab, var(--viz-accent) 55%, var(--lab-panel-border));
+}
+
+.viz-matrix-block {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--viz-formula-fg, #d6d7dd);
+  background: var(--viz-matrix-bg);
+  border: 1px solid var(--lab-panel-border);
+  border-radius: 12px;
+  padding: 0.65rem 0.75rem;
+  overflow-x: auto;
+}
+
+.viz-matrix-block pre {
+  margin: 0;
+  white-space: pre;
 }

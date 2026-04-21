@@ -86,7 +86,10 @@ export default function HubPage() {
     <div className="min-h-screen flex flex-col bg-[#101113] text-ink bg-dot-grid">
 
       {/* ── System strip ─────────────────────────────────────────── */}
-      <div className="flex-none border-b border-rim px-6 md:px-14 py-3 flex items-center justify-between bg-[#16171a]/90 backdrop-blur-sm">
+      <div
+        className="flex-none border-b border-[var(--lab-header-border)] px-6 md:px-14 py-3 flex items-center justify-between backdrop-blur-md"
+        style={{ background: "var(--lab-header-bg)" }}
+      >
         <span className="font-mono text-[10px] tracking-[0.25em] text-ink-4 uppercase select-none">
           Geometric Analyzer
         </span>
