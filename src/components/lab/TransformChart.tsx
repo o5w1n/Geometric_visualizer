@@ -7,7 +7,7 @@ import {
   ResponsiveContainer, ReferenceLine 
 } from "recharts";
 import { useGeometryStore } from "@/store/useGeometryStore";
-import { reflectPoint, rotatePoint, translatePoint, cohenSutherlandClip, Point } from "@/lib/transformationUtils";
+import { reflectPoint, rotatePoint, translatePoint, cohenSutherlandClip, applyCombined2D, Point } from "@/lib/transformationUtils";
 
 // Build polygon edge list from vertices
 function polyEdges(pts: Point[]): [Point, Point][] {
@@ -43,17 +43,20 @@ type OverlayProps = {
   viewport: { xMin: number; yMin: number; xMax: number; yMax: number };
   originalColor: string;
   transformedColor: string;
+  showVertexMapping: boolean;
 };
 
 const VisualsOverlay = (props: OverlayProps) => {
   const { xAxisMap, yAxisMap, ghostData, activeData, mode, reflectionLine,
-          viewportEnabled, viewport, originalColor, transformedColor } = props;
+          viewportEnabled, viewport, originalColor, transformedColor, showVertexMapping } = props;
 
-  if (!xAxisMap || !yAxisMap) return null;
+  const xScale = xAxisMap?.[0]?.scale;
+  const yScale = yAxisMap?.[0]?.scale;
+  if (!xScale || !yScale) return null;
 
   const toPx = (x: number, y: number) => ({
-    x: xAxisMap[0].scale(x),
-    y: yAxisMap[0].scale(y)
+    x: xScale(x),
+    y: yScale(y)
   });
 
   // Convert shape data to SVG point strings
@@ -66,6 +69,34 @@ const VisualsOverlay = (props: OverlayProps) => {
     const px = toPx(d.x, d.y);
     return `${px.x},${px.y}`;
   }).join(' ') : '';
+
+  const mappingLines: React.ReactElement[] = [];
+  if (
+    showVertexMapping &&
+    ghostData.length === activeData.length &&
+    ghostData.length > 0 &&
+    mode !== "threeD"
+  ) {
+    for (let i = 0; i < ghostData.length; i++) {
+      const a = toPx(ghostData[i].x, ghostData[i].y);
+      const b = toPx(activeData[i].x, activeData[i].y);
+      if (Math.hypot(b.x - a.x, b.y - a.y) < 0.5) continue;
+      mappingLines.push(
+        <line
+          key={`map-${i}`}
+          x1={a.x}
+          y1={a.y}
+          x2={b.x}
+          y2={b.y}
+          stroke={transformedColor}
+          strokeOpacity={0.45}
+          strokeWidth={1.25}
+          strokeDasharray="4 4"
+          className="pointer-events-none"
+        />
+      );
+    }
+  }
 
   // Reflection mirror line
   let mirrorLine = null;
@@ -132,6 +163,8 @@ const VisualsOverlay = (props: OverlayProps) => {
           fill={hexToRgba(originalColor, 0.1)} stroke={originalColor} strokeWidth={2} strokeDasharray="4 4" />
       )}
 
+      {mappingLines}
+
       {/* Active shape — only when not clipping */}
       {activePts && mode !== null && !viewportEnabled && (
         <polygon points={activePts}
@@ -196,14 +229,9 @@ export function TransformChart() {
       return store.vertices.map(v => [store.dilationCenter[0] + (v[0] - store.dilationCenter[0]) * store.dilationScale, store.dilationCenter[1] + (v[1] - store.dilationCenter[1]) * store.dilationScaleY] as Point);
     }
     if (store.mode === 'combined') {
-      const angleRad = (store.combinedAngle * Math.PI) / 180;
-      const sin = Math.sin(angleRad);
-      const cos = Math.cos(angleRad);
-      return store.vertices.map(([x, y]) => {
-        const rx = x * cos - y * sin;
-        const ry = x * sin + y * cos;
-        return [rx * store.combinedScale[0] + store.combinedTranslate[0], ry * store.combinedScale[1] + store.combinedTranslate[1]] as Point;
-      });
+      return store.vertices.map((v) =>
+        applyCombined2D(v, store.combinedAngle, store.combinedScale, store.combinedTranslate, store.combinedOrder)
+      );
     }
     return store.vertices; // fallback when mode is null
   }, [store]);
@@ -299,21 +327,40 @@ export function TransformChart() {
 
       {/* Audio toggle */}
       <button
+        type="button"
         onClick={() => setAudioEnabled(v => !v)}
         title={audioEnabled ? "Mute shape audio" : "Enable shape audio"}
         className={`absolute top-2 right-2 z-10 px-2 py-1 rounded text-xs font-mono border transition-all ${audioEnabled ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' : 'bg-zinc-900/80 border-zinc-700 text-zinc-500 hover:text-zinc-300'}`}
       >
         {audioEnabled ? "♪ ON" : "♪ OFF"}
       </button>
+
+      {store.mode !== null && store.mode !== "threeD" && (
+        <div className="absolute bottom-14 left-3 z-10 flex flex-wrap items-center gap-3 text-[10px] font-mono pointer-events-none select-none">
+          <span className="flex items-center gap-1.5 text-zinc-400">
+            <span className="w-2.5 h-2.5 rounded-full border border-zinc-500" style={{ backgroundColor: hexToRgba(originalColor, 0.35) }} />
+            Original
+          </span>
+          <span className="flex items-center gap-1.5 text-zinc-400">
+            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: transformedColor }} />
+            Transformed
+          </span>
+          <span className="flex items-center gap-1.5 text-zinc-400">
+            <span className="text-rose-400">✦</span>
+            Controls
+          </span>
+        </div>
+      )}
+
       <ResponsiveContainer width="100%" height="100%">
         <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-          <CartesianGrid stroke="#2f4470" strokeOpacity={0.5} strokeDasharray="1 0" />
+          <CartesianGrid stroke="#6b8cc9" strokeOpacity={0.22} vertical fill="none" />
           
-          <XAxis type="number" dataKey="x" name="X axis" domain={[-10, 10]} tickCount={21} stroke="#4c659b" />
-          <YAxis type="number" dataKey="y" name="Y axis" domain={[-10, 10]} tickCount={21} stroke="#4c659b" />
+          <XAxis type="number" dataKey="x" name="X axis" domain={[-10, 10]} tickCount={21} stroke="#8fa8d8" tick={{ fill: '#94a8cc', fontSize: 10 }} />
+          <YAxis type="number" dataKey="y" name="Y axis" domain={[-10, 10]} tickCount={21} stroke="#8fa8d8" tick={{ fill: '#94a8cc', fontSize: 10 }} />
           
-          <ReferenceLine y={0} stroke="#2e5ca9" strokeWidth={1.3} />
-          <ReferenceLine x={0} stroke="#2e5ca9" strokeWidth={1.3} />
+          <ReferenceLine y={0} stroke="#9dc0f5" strokeOpacity={0.85} strokeWidth={1.35} />
+          <ReferenceLine x={0} stroke="#9dc0f5" strokeOpacity={0.85} strokeWidth={1.35} />
           
           {/* Active shape vertices (unclickable visually, just indicator) */}
           {store.mode !== null && store.mode !== "threeD" && (
@@ -348,12 +395,11 @@ export function TransformChart() {
             activeData={activeData}
             mode={store.mode}
             reflectionLine={store.reflectionLine}
-            rotationPivot={store.rotationPivot}
-            dilationCenter={store.dilationCenter}
             viewportEnabled={store.viewportEnabled}
             viewport={store.viewport}
             originalColor={originalColor}
             transformedColor={transformedColor}
+            showVertexMapping={store.mode !== null && store.mode !== "reflect"}
           />}
           {store.mode === "threeD" && (
             <Scatter

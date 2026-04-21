@@ -1,11 +1,19 @@
 import { create } from 'zustand';
-import { Point, reflectPoint, rotatePoint, dilatePoint, translatePoint } from '@/lib/transformationUtils';
+import {
+  Point,
+  reflectPoint,
+  rotatePoint,
+  dilatePoint,
+  translatePoint,
+  applyCombined2D,
+  type CombinedOrder,
+} from '@/lib/transformationUtils';
 import { ShapeType } from '@/lib/shapeDefinitions';
 import { type UnfoldShapeId } from '@/lib/shapeNets';
 
 export type TransformationMode = 'translate' | 'reflect' | 'rotate' | 'scale' | 'combined' | 'threeD' | null;
 export type ReflectionMode = 'x-axis' | 'y-axis' | 'y=x' | 'y=-x' | 'custom';
-export type CombinedOrder = 'trs' | 'rst';
+export type { CombinedOrder };
 
 export interface SpawnedShape {
   id: string;
@@ -209,23 +217,9 @@ export const useGeometryStore = create<GeometryState>((set) => ({
       newVertices = state.vertices.map(v => dilatePoint(v, state.dilationCenter, state.dilationScale));
       return { vertices: newVertices, dilationScale: 1, dilationScaleY: 1 };
     } else if (state.mode === 'combined') {
-      const angleRad = (state.combinedAngle * Math.PI) / 180;
-      const sin = Math.sin(angleRad);
-      const cos = Math.cos(angleRad);
-      const [sx, sy] = state.combinedScale;
-      const [dx, dy] = state.combinedTranslate;
-      newVertices = state.vertices.map(([x, y]) => {
-        if (state.combinedOrder === 'trs') {
-          const rx = x * cos - y * sin;
-          const ry = x * sin + y * cos;
-          return [rx * sx + dx, ry * sy + dy] as Point;
-        }
-        const sxv = x * sx;
-        const syv = y * sy;
-        const rx = sxv * cos - syv * sin;
-        const ry = sxv * sin + syv * cos;
-        return [rx + dx, ry + dy] as Point;
-      });
+      newVertices = state.vertices.map((v) =>
+        applyCombined2D(v, state.combinedAngle, state.combinedScale, state.combinedTranslate, state.combinedOrder)
+      );
       return { vertices: newVertices };
     }
     return { vertices: newVertices };

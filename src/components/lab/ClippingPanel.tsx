@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useGeometryStore } from "@/store/useGeometryStore";
-import { csRegionCode, csRegionLabel, reflectPoint, rotatePoint, translatePoint, Point } from "@/lib/transformationUtils";
+import { csRegionCode, csRegionLabel, reflectPoint, rotatePoint, translatePoint, applyCombined2D, Point } from "@/lib/transformationUtils";
 
 export function ClippingPanel() {
   const store = useGeometryStore();
@@ -11,7 +11,7 @@ export function ClippingPanel() {
     viewport, setViewport,
     vertices, mode,
     translationVector, reflectionLine, rotationPivot, rotationAngle,
-    dilationCenter, dilationScale, dilationScaleY, combinedAngle, combinedScale, combinedTranslate,
+    dilationCenter, dilationScale, dilationScaleY, combinedAngle, combinedScale, combinedTranslate, combinedOrder,
   } = store;
 
   const activeVertices = useMemo((): Point[] => {
@@ -20,17 +20,12 @@ export function ClippingPanel() {
     if (mode === 'rotate')    return vertices.map(v => rotatePoint(v, rotationPivot, rotationAngle));
     if (mode === 'scale')     return vertices.map(v => [dilationCenter[0] + (v[0] - dilationCenter[0]) * dilationScale, dilationCenter[1] + (v[1] - dilationCenter[1]) * dilationScaleY] as Point);
     if (mode === 'combined') {
-      const angleRad = (combinedAngle * Math.PI) / 180;
-      const sin = Math.sin(angleRad);
-      const cos = Math.cos(angleRad);
-      return vertices.map(([x, y]) => {
-        const rx = x * cos - y * sin;
-        const ry = x * sin + y * cos;
-        return [rx * combinedScale[0] + combinedTranslate[0], ry * combinedScale[1] + combinedTranslate[1]] as Point;
-      });
+      return vertices.map((v) =>
+        applyCombined2D(v, combinedAngle, combinedScale, combinedTranslate, combinedOrder)
+      );
     }
     return vertices;
-  }, [vertices, mode, translationVector, reflectionLine, rotationPivot, rotationAngle, dilationCenter, dilationScale, dilationScaleY, combinedAngle, combinedScale, combinedTranslate]);
+  }, [vertices, mode, translationVector, reflectionLine, rotationPivot, rotationAngle, dilationCenter, dilationScale, dilationScaleY, combinedAngle, combinedScale, combinedTranslate, combinedOrder]);
 
   const { xMin, xMax, yMin, yMax } = viewport;
 
