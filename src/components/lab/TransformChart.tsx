@@ -49,11 +49,13 @@ const VisualsOverlay = (props: OverlayProps) => {
   const { xAxisMap, yAxisMap, ghostData, activeData, mode, reflectionLine,
           viewportEnabled, viewport, originalColor, transformedColor } = props;
 
-  if (!xAxisMap || !yAxisMap) return null;
+  const xScale = xAxisMap?.[0]?.scale;
+  const yScale = yAxisMap?.[0]?.scale;
+  if (!xScale || !yScale) return null;
 
   const toPx = (x: number, y: number) => ({
-    x: xAxisMap[0].scale(x),
-    y: yAxisMap[0].scale(y)
+    x: xScale(x),
+    y: yScale(y)
   });
 
   // Convert shape data to SVG point strings
@@ -348,8 +350,6 @@ export function TransformChart() {
             activeData={activeData}
             mode={store.mode}
             reflectionLine={store.reflectionLine}
-            rotationPivot={store.rotationPivot}
-            dilationCenter={store.dilationCenter}
             viewportEnabled={store.viewportEnabled}
             viewport={store.viewport}
             originalColor={originalColor}
