@@ -14,10 +14,25 @@ function polyEdges(pts: Point[]): [Point, Point][] {
   return pts.map((p, i) => [p, pts[(i + 1) % pts.length]]);
 }
 
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function hexToRgb(hex: string) {
+  return {
+    r: parseInt(hex.slice(1, 3), 16),
+    g: parseInt(hex.slice(3, 5), 16),
+    b: parseInt(hex.slice(5, 7), 16),
+  };
+}
+
 // Custom SVG Overlay for shapes, clipping, and lines
 const VisualsOverlay = (props: any) => {
   const { xAxisMap, yAxisMap, ghostData, activeData, mode, reflectionLine,
-          viewportEnabled, viewport } = props;
+          viewportEnabled, viewport, originalColor, transformedColor } = props;
 
   if (!xAxisMap || !yAxisMap) return null;
 
@@ -65,7 +80,7 @@ const VisualsOverlay = (props: any) => {
       const a = toPx(p1[0], p1[1]), b = toPx(p2[0], p2[1]);
       outsideEdges.push(
         <line key={`out-${i}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-          stroke="#3b82f6" strokeWidth={1.5} strokeOpacity={0.2} strokeDasharray="3 3" />
+          stroke={transformedColor} strokeWidth={1.5} strokeOpacity={0.2} strokeDasharray="3 3" />
       );
       // Clipped segment (inside, bright)
       if (clipped) {
@@ -99,13 +114,13 @@ const VisualsOverlay = (props: any) => {
       {/* Ghost Outline */}
       {ghostPts && (
         <polygon points={ghostPts}
-          fill="rgba(82,82,91,0.1)" stroke="#71717a" strokeWidth={2} strokeDasharray="4 4" />
+          fill={hexToRgba(originalColor, 0.1)} stroke={originalColor} strokeWidth={2} strokeDasharray="4 4" />
       )}
 
       {/* Active shape — only when not clipping */}
       {activePts && mode !== null && !viewportEnabled && (
         <polygon points={activePts}
-          fill="rgba(59,130,246,0.2)" stroke="#3b82f6" strokeWidth={2} />
+          fill={hexToRgba(transformedColor, 0.2)} stroke={transformedColor} strokeWidth={2} />
       )}
 
       {/* Clipping: dimmed full edges + bright clipped segments */}
@@ -122,6 +137,7 @@ const VisualsOverlay = (props: any) => {
 
 export function TransformChart() {
   const store = useGeometryStore();
+  const { originalColor, transformedColor, setOriginalColor, setTransformedColor } = store;
   const [audioEnabled, setAudioEnabled] = useState(false);
 
   // Custom drag state
@@ -225,11 +241,14 @@ export function TransformChart() {
 
   return (
     <div
-      className="w-full h-full min-h-[500px] relative"
+      className="w-full h-full min-h-[500px] relative flex flex-col"
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
+      {/* Chart area grows to fill available space */}
+      <div className="relative flex-1 min-h-[420px]">
+
       {/* Audio toggle */}
       <button
         onClick={() => setAudioEnabled(v => !v)}
@@ -250,15 +269,14 @@ export function TransformChart() {
           
           {/* Active shape vertices (unclickable visually, just indicator) */}
           {store.mode !== null && (
-            <Scatter name="ActiveShape" data={activeData} fill="#3b82f6" shape="circle" isAnimationActive={false} pointerEvents="none" />
+            <Scatter name="ActiveShape" data={activeData} fill={transformedColor} shape="circle" isAnimationActive={false} pointerEvents="none" />
           )}
 
           {/* Ghost shape vertices (draggable) */}
-          {/* Use standard grey circles for ghost points */}
-          <Scatter 
-            name="GhostShape" 
-            data={ghostData} 
-            fill="#a1a1aa" 
+          <Scatter
+            name="GhostShape"
+            data={ghostData}
+            fill={originalColor}
             shape="circle"
             onMouseDown={handleMouseDown}
             isAnimationActive={false}
@@ -286,9 +304,63 @@ export function TransformChart() {
             dilationCenter={store.dilationCenter}
             viewportEnabled={store.viewportEnabled}
             viewport={store.viewport}
+            originalColor={originalColor}
+            transformedColor={transformedColor}
           />
         </ScatterChart>
       </ResponsiveContainer>
+      </div>{/* end chart area */}
+
+      {/* Color picker strip */}
+      <ColorStrip
+        originalColor={originalColor}
+        transformedColor={transformedColor}
+        onOriginal={setOriginalColor}
+        onTransformed={setTransformedColor}
+      />
+    </div>
+  );
+}
+
+function ColorStrip({ originalColor, transformedColor, onOriginal, onTransformed }: {
+  originalColor: string;
+  transformedColor: string;
+  onOriginal: (c: string) => void;
+  onTransformed: (c: string) => void;
+}) {
+  const origRgb  = hexToRgb(originalColor);
+  const transRgb = hexToRgb(transformedColor);
+
+  return (
+    <div className="flex gap-3 px-4 py-3 border-t border-zinc-800 bg-zinc-950/60">
+      {[
+        { label: 'Original', color: originalColor, rgb: origRgb, onChange: onOriginal },
+        { label: 'Transformed', color: transformedColor, rgb: transRgb, onChange: onTransformed },
+      ].map(({ label, color, rgb, onChange }) => (
+        <div key={label} className="flex items-center gap-3 flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2">
+          <label className="relative cursor-pointer shrink-0">
+            <div
+              className="w-7 h-7 rounded-md border-2 border-zinc-700 shadow-inner"
+              style={{ backgroundColor: color }}
+            />
+            <input
+              type="color"
+              value={color}
+              onChange={e => onChange(e.target.value)}
+              className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+            />
+          </label>
+          <div className="flex flex-col min-w-0">
+            <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider leading-none mb-1">{label}</span>
+            <span className="font-mono text-xs text-zinc-300 leading-none">
+              R <span className="text-zinc-100">{rgb.r}</span>
+              &nbsp;G <span className="text-zinc-100">{rgb.g}</span>
+              &nbsp;B <span className="text-zinc-100">{rgb.b}</span>
+            </span>
+          </div>
+          <span className="ml-auto font-mono text-[10px] text-zinc-600 shrink-0">{color.toUpperCase()}</span>
+        </div>
+      ))}
     </div>
   );
 }

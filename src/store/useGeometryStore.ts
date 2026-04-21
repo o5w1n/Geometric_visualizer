@@ -46,10 +46,16 @@ interface GeometryState {
   unfoldShapeId: UnfoldShapeId;
   unfoldProgress: number;
 
+  // Shape colors (transformation lab)
+  originalColor: string;
+  transformedColor: string;
+
   // Actions
   setMode: (mode: TransformationMode) => void;
   setVertices: (v: Point[]) => void;
   updateVertex: (index: number, pos: Point) => void;
+  setOriginalColor: (c: string) => void;
+  setTransformedColor: (c: string) => void;
 
   setTranslationVector: (t: Point) => void;
 
@@ -101,6 +107,12 @@ export const useGeometryStore = create<GeometryState>((set) => ({
   spawnedShapes: [],
   unfoldShapeId: 'cube' as UnfoldShapeId,
   unfoldProgress: 0,
+
+  originalColor: '#a1a1aa',
+  transformedColor: '#3b82f6',
+
+  setOriginalColor: (c) => set({ originalColor: c }),
+  setTransformedColor: (c) => set({ transformedColor: c }),
 
   setUnfoldProgress: (v) => set({ unfoldProgress: Math.max(0, Math.min(1, v)) }),
   setUnfoldShapeId: (id) => set({ unfoldShapeId: id, unfoldProgress: 0 }),
