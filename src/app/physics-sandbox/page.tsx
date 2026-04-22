@@ -39,21 +39,23 @@ export default function NetUnfoldingPage() {
       {/* ── Content: 3-column grid ──────────────────────────────── */}
       {/*  [3D canvas] | [2D net] | [sidebar]                       */}
       <main className="flex-1 min-h-0 grid grid-cols-1
-                       lg:grid-cols-[1fr_320px_300px] overflow-hidden p-4 gap-4 bg-[#101113]">
+                       lg:grid-cols-[1fr_320px_300px] overflow-hidden">
 
         {/* 3D canvas — always dark */}
-        <section className="relative min-h-0 viz-card overflow-hidden">
+        <section className="relative min-h-0 bg-black">
           <UnfoldScene />
         </section>
 
         {/* 2D net diagram */}
-        <section className="relative min-h-0 viz-card
+        <section className="relative min-h-0 bg-panel border-t
+                            lg:border-t-0 lg:border-l border-rim-faint
                             overflow-hidden flex items-center justify-center">
           <UnfoldNetSVG />
         </section>
 
         {/* Formula sidebar */}
-        <aside className="viz-card min-h-0 overflow-y-auto">
+        <aside className="bg-panel border-t lg:border-t-0 lg:border-l
+                          border-rim-faint min-h-0 overflow-y-auto">
           <UnfoldSidebar />
         </aside>
       </main>

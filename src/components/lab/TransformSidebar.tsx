@@ -2,88 +2,91 @@
 
 import { useMemo } from "react";
 import { useGeometryStore } from "@/store/useGeometryStore";
-import { reflectPoint, rotatePoint, translatePoint, type Point } from "@/lib/transformationUtils";
-import { RotateCcw, Plus, Trash2 } from "lucide-react";
+import { TranslationPanel } from "./TranslationPanel";
+import { ReflectionPanel } from "./ReflectionPanel";
+import { RotationPanel } from "./RotationPanel";
+import { DilationPanel } from "./DilationPanel";
+import { reflectPoint, rotatePoint, dilatePoint, translatePoint, type Point } from "@/lib/transformationUtils";
+import { ArrowRight, Move, FlipHorizontal, RotateCw, Maximize, ArrowLeft, RotateCcw, Plus, Trash2 } from "lucide-react";
 
 export function TransformSidebar() {
-  const { mode, resetShape, translationVector, setTranslationVector, rotationAngle, setRotationAngle, rotationPivot, reflectionLine, dilationCenter, dilationScale, dilationScaleY, setDilationScale, setDilationScaleY, combinedAngle, setCombinedAngle, combinedScale, setCombinedScale, combinedTranslate, setCombinedTranslate, rotation3D, setRotation3D, scale3D, setScale3D, translation3D, setTranslation3D } = useGeometryStore();
+  const { mode, setMode, resetShape } = useGeometryStore();
+
+  if (mode === null) {
+    return (
+      <div className="flex flex-col h-full animate-in fade-in duration-300">
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-2 text-ink">Select Transformation</h2>
+          <p className="text-ink-2 text-sm mb-6">
+            Choose a global operator to apply to the geometric active shape.
+          </p>
+
+          <div className="space-y-3">
+            <button onClick={() => setMode('translate')} className="w-full group flex items-center justify-between p-4 border border-rim rounded-xl bg-raised hover:bg-blue-500/10 hover:border-blue-500/50 transition-all text-left cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-blue-500/20 text-blue-500"><Move size={18} /></div>
+                <span className="font-medium text-ink">Translation</span>
+              </div>
+              <ArrowRight size={16} className="text-ink-3 group-hover:text-blue-500 transition-colors" />
+            </button>
+
+            <button onClick={() => setMode('reflect')} className="w-full group flex items-center justify-between p-4 border border-rim rounded-xl bg-raised hover:bg-rose-500/10 hover:border-rose-500/50 transition-all text-left cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-rose-500/20 text-rose-500"><FlipHorizontal size={18} /></div>
+                <span className="font-medium text-ink">Reflection</span>
+              </div>
+              <ArrowRight size={16} className="text-ink-3 group-hover:text-rose-500 transition-colors" />
+            </button>
+
+            <button onClick={() => setMode('rotate')} className="w-full group flex items-center justify-between p-4 border border-rim rounded-xl bg-raised hover:bg-amber-500/10 hover:border-amber-500/50 transition-all text-left cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-amber-500/20 text-amber-600"><RotateCw size={18} /></div>
+                <span className="font-medium text-ink">Rotation</span>
+              </div>
+              <ArrowRight size={16} className="text-ink-3 group-hover:text-amber-600 transition-colors" />
+            </button>
+
+            <button onClick={() => setMode('dilate')} className="w-full group flex items-center justify-between p-4 border border-rim rounded-xl bg-raised hover:bg-fuchsia-500/10 hover:border-fuchsia-500/50 transition-all text-left cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-fuchsia-500/20 text-fuchsia-500"><Maximize size={18} /></div>
+                <span className="font-medium text-ink">Dilation</span>
+              </div>
+              <ArrowRight size={16} className="text-ink-3 group-hover:text-fuchsia-500 transition-colors" />
+            </button>
+          </div>
+        </div>
+
+        <VerticesPanel />
+
+        <div className="mt-auto pt-6 border-t border-rim">
+          <button
+            onClick={resetShape}
+            className="w-full flex items-center justify-center gap-2 p-3 border border-rim rounded-xl text-ink-2 hover:text-ink hover:border-rim hover:bg-raised transition-all text-sm cursor-pointer"
+          >
+            <RotateCcw size={14} /> Reset Shape
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="viz-card p-4 space-y-3">
-        {mode === "translate" && (
-          <>
-            <h3 className="viz-title">TRANSLATE</h3>
-            <Slider label="dx" value={translationVector[0]} min={-10} max={10} step={0.5} onChange={(v) => setTranslationVector([v, translationVector[1]])} />
-            <Slider label="dy" value={translationVector[1]} min={-10} max={10} step={0.5} onChange={(v) => setTranslationVector([translationVector[0], v])} />
-            <p className="viz-formula">x&apos; = x {translationVector[0] >= 0 ? "+" : ""}{translationVector[0].toFixed(1)}<br />y&apos; = y {translationVector[1] >= 0 ? "+" : ""}{translationVector[1].toFixed(1)}</p>
-          </>
-        )}
-        {mode === "reflect" && (
-          <>
-            <h3 className="viz-title">REFLECT</h3>
-            <p className="viz-muted">Use the red control points to define a mirror line.</p>
-            <p className="viz-formula">Mirror from P1({reflectionLine.p1[0].toFixed(1)}, {reflectionLine.p1[1].toFixed(1)}) to P2({reflectionLine.p2[0].toFixed(1)}, {reflectionLine.p2[1].toFixed(1)})</p>
-          </>
-        )}
-        {mode === "rotate" && (
-          <>
-            <h3 className="viz-title">ROTATE</h3>
-            <Slider label="θ" value={rotationAngle} min={-180} max={180} step={1} suffix="°" onChange={setRotationAngle} />
-            <p className="viz-formula">x&apos; = cos(θ)x − sin(θ)y<br />y&apos; = sin(θ)x + cos(θ)y</p>
-            <p className="viz-muted">Pivot: ({rotationPivot[0].toFixed(1)}, {rotationPivot[1].toFixed(1)})</p>
-          </>
-        )}
-        {mode === "scale" && (
-          <>
-            <h3 className="viz-title">SCALE</h3>
-            <Slider label="sx" value={dilationScale} min={-3} max={3} step={0.1} onChange={setDilationScale} />
-            <Slider label="sy" value={dilationScaleY} min={-3} max={3} step={0.1} onChange={setDilationScaleY} />
-            <p className="viz-muted">Center: ({dilationCenter[0].toFixed(1)}, {dilationCenter[1].toFixed(1)})</p>
-          </>
-        )}
-        {mode === "combined" && (
-          <>
-            <h3 className="viz-title">ROTATION → SCALE → TRANSLATE</h3>
-            <Slider label="θ" value={combinedAngle} min={-180} max={180} step={1} suffix="°" onChange={setCombinedAngle} />
-            <Slider label="sx" value={combinedScale[0]} min={-3} max={3} step={0.1} onChange={(v) => setCombinedScale([v, combinedScale[1]])} />
-            <Slider label="sy" value={combinedScale[1]} min={-3} max={3} step={0.1} onChange={(v) => setCombinedScale([combinedScale[0], v])} />
-            <Slider label="dx" value={combinedTranslate[0]} min={-10} max={10} step={0.5} onChange={(v) => setCombinedTranslate([v, combinedTranslate[1]])} />
-            <Slider label="dy" value={combinedTranslate[1]} min={-10} max={10} step={0.5} onChange={(v) => setCombinedTranslate([combinedTranslate[0], v])} />
-          </>
-        )}
-        {mode === "threeD" && (
-          <>
-            <h3 className="viz-title">3D ROTATION</h3>
-            <Slider label="X°" value={rotation3D[0]} min={-180} max={180} step={1} suffix="°" onChange={(v) => setRotation3D([v, rotation3D[1], rotation3D[2]])} />
-            <Slider label="Y°" value={rotation3D[1]} min={-180} max={180} step={1} suffix="°" onChange={(v) => setRotation3D([rotation3D[0], v, rotation3D[2]])} />
-            <Slider label="Z°" value={rotation3D[2]} min={-180} max={180} step={1} suffix="°" onChange={(v) => setRotation3D([rotation3D[0], rotation3D[1], v])} />
-            <h3 className="viz-title pt-3">3D SCALE</h3>
-            <Slider label="Sx" value={scale3D[0]} min={0.2} max={3} step={0.01} onChange={(v) => setScale3D([v, scale3D[1], scale3D[2]])} />
-            <Slider label="Sy" value={scale3D[1]} min={0.2} max={3} step={0.01} onChange={(v) => setScale3D([scale3D[0], v, scale3D[2]])} />
-            <Slider label="Sz" value={scale3D[2]} min={0.2} max={3} step={0.01} onChange={(v) => setScale3D([scale3D[0], scale3D[1], v])} />
-            <h3 className="viz-title pt-3">3D TRANSLATION</h3>
-            <Slider label="Tx" value={translation3D[0]} min={-80} max={80} step={1} onChange={(v) => setTranslation3D([v, translation3D[1], translation3D[2]])} />
-            <Slider label="Ty" value={translation3D[1]} min={-80} max={80} step={1} onChange={(v) => setTranslation3D([translation3D[0], v, translation3D[2]])} />
-            <Slider label="Tz" value={translation3D[2]} min={-80} max={80} step={1} onChange={(v) => setTranslation3D([translation3D[0], translation3D[1], v])} />
-          </>
-        )}
+    <div className="flex flex-col h-full">
+      <button
+        onClick={() => setMode(null)}
+        className="flex items-center gap-2 text-ink-2 hover:text-ink transition-colors mb-6 text-sm cursor-pointer"
+      >
+        <ArrowLeft size={16} /> Back to Transforms
+      </button>
+
+      <div className="flex-1 overflow-y-auto">
+        {mode === 'translate' && <TranslationPanel />}
+        {mode === 'reflect' && <ReflectionPanel />}
+        {mode === 'rotate' && <RotationPanel />}
+        {mode === 'dilate' && <DilationPanel />}
       </div>
 
       <VerticesPanel />
-      <button onClick={resetShape} className="viz-pill w-full py-2.5 flex items-center justify-center gap-2 text-sm cursor-pointer"><RotateCcw size={14} />Reset Shape</button>
-    </div>
-  );
-}
-
-function Slider({ label, value, min, max, step, onChange, suffix = "" }: { label: string; value: number; min: number; max: number; step: number; onChange: (v: number) => void; suffix?: string }) {
-  return (
-    <div>
-      <div className="flex items-center justify-between text-sm mb-1">
-        <span className="viz-muted uppercase text-[11px]">{label}</span>
-        <span className="font-semibold text-ink">{value.toFixed(1)}{suffix}</span>
-      </div>
-      <input className="viz-range" type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} />
     </div>
   );
 }
@@ -96,17 +99,7 @@ function VerticesPanel() {
     if (mode === 'translate') return vertices.map(v => translatePoint(v, store.translationVector));
     if (mode === 'reflect') return vertices.map(v => reflectPoint(v, store.reflectionLine.p1, store.reflectionLine.p2));
     if (mode === 'rotate') return vertices.map(v => rotatePoint(v, store.rotationPivot, store.rotationAngle));
-    if (mode === 'scale') return vertices.map(v => [store.dilationCenter[0] + (v[0] - store.dilationCenter[0]) * store.dilationScale, store.dilationCenter[1] + (v[1] - store.dilationCenter[1]) * store.dilationScaleY] as Point);
-    if (mode === "combined") {
-      const angleRad = (store.combinedAngle * Math.PI) / 180;
-      const sin = Math.sin(angleRad);
-      const cos = Math.cos(angleRad);
-      return vertices.map(([x, y]) => {
-        const rx = x * cos - y * sin;
-        const ry = x * sin + y * cos;
-        return [rx * store.combinedScale[0] + store.combinedTranslate[0], ry * store.combinedScale[1] + store.combinedTranslate[1]] as Point;
-      });
-    }
+    if (mode === 'dilate') return vertices.map(v => dilatePoint(v, store.dilationCenter, store.dilationScale));
     return vertices;
   }, [store, vertices, mode]);
 
@@ -128,7 +121,7 @@ function VerticesPanel() {
   }
 
   return (
-    <div className="viz-card p-4 space-y-4">
+    <div className="mt-6 pt-6 border-t border-rim space-y-4">
       <div>
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-xs font-medium text-ink-2 uppercase tracking-wider">Vertices</h3>
@@ -149,7 +142,7 @@ function VerticesPanel() {
                 defaultValue={v[0]}
                 key={`${i}-x-${v[0]}`}
                 onChange={e => handleCoord(i, 0, e.target.value)}
-                className="w-full bg-panel border border-rim rounded px-1.5 py-1 text-xs font-mono text-ink focus:outline-none focus:border-blue-500/50"
+                className="w-full bg-raised border border-rim rounded px-1.5 py-1 text-xs font-mono text-ink focus:outline-none focus:border-blue-500/50"
               />
               <input
                 type="number"
@@ -157,7 +150,7 @@ function VerticesPanel() {
                 defaultValue={v[1]}
                 key={`${i}-y-${v[1]}`}
                 onChange={e => handleCoord(i, 1, e.target.value)}
-                className="w-full bg-panel border border-rim rounded px-1.5 py-1 text-xs font-mono text-ink focus:outline-none focus:border-blue-500/50"
+                className="w-full bg-raised border border-rim rounded px-1.5 py-1 text-xs font-mono text-ink focus:outline-none focus:border-blue-500/50"
               />
               <button
                 onClick={() => removeVertex(i)}

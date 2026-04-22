@@ -83,10 +83,10 @@ const accentClasses: Record<
 
 export default function HubPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#101113] text-ink bg-dot-grid">
+    <div className="min-h-screen flex flex-col bg-base bg-dot-grid">
 
       {/* ── System strip ─────────────────────────────────────────── */}
-      <div className="flex-none border-b border-rim px-6 md:px-14 py-3 flex items-center justify-between bg-[#16171a]/90 backdrop-blur-sm">
+      <div className="flex-none border-b border-rim-faint px-6 md:px-14 py-3 flex items-center justify-between bg-base/90 backdrop-blur-sm">
         <span className="font-mono text-[10px] tracking-[0.25em] text-ink-4 uppercase select-none">
           Geometric Analyzer
         </span>
@@ -121,15 +121,15 @@ export default function HubPage() {
         <div className="w-full h-px bg-rim-faint mb-12" />
 
         {/* ── Module grid — gap-px Swiss grid ───────────────────── */}
-        <div className="grid grid-cols-1 md:grid-cols-3 bg-rim gap-px border border-rim rounded-2xl overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-3 bg-rim-faint gap-px border border-rim-faint">
           {modules.map(({ number, href, title, description, accent, Icon }) => {
             const a = accentClasses[accent];
             return (
               <Link
                 key={number}
                 href={href}
-                className={`group relative flex flex-col bg-[#191a1d] p-8 overflow-hidden
-                           border-l-2 transition-all duration-200 hover:bg-[#22242a]
+                className={`group relative flex flex-col bg-base p-8 overflow-hidden
+                           border-l-2 transition-all duration-200 hover:bg-raised
                            cursor-pointer ${a.border}`}
               >
                 {/* Ghost number — sweeps in on hover */}
